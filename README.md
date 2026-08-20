@@ -44,10 +44,11 @@ Three shelves:
 
 ## Child threads stay reachable
 
-A quiet child thread lives in its parent's header chip instead of taking a
-permanent row in the inbox. A working child, a child that needs input, and the
-currently open child stay visible directly below their parent. Searching also
-shows matching children. Two chips in the thread header carry the full relation:
+Child threads follow the same lifecycle rules as roots. Children on the active
+shelf sit directly below their parent in the inbox; snoozed and settled
+children move to their matching shelves. Working children and children that
+need input return to the inbox through the same wake rules. Two header chips
+keep the complete relationship close at hand:
 
 - On a parent: a chip with one coloured disc per child. It opens the list of
   children.

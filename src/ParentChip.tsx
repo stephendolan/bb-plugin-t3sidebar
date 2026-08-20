@@ -11,10 +11,9 @@ import { parentOf, threadDisplayTitle } from "./inbox";
 /**
  * The way back out of a child thread.
  *
- * The flat list hides a child while its parent is on screen, so opening a
- * child from the parent's header chip leaves the user with no route back. This
- * chip names the parent and opens it. The disc repeats the parent's colour
- * from the list, so the chip points at a thread the user can recognise.
+ * Names and opens the parent from a child thread. The disc repeats the
+ * parent's colour from the list, so the chip points at a thread the user can
+ * recognise even when scope or lifecycle has moved the parent elsewhere.
  */
 export function ParentChip({
   threadId,

@@ -71,23 +71,6 @@ export function partitionPinned(threads: readonly PluginSidebarThread[]): {
   return { pinned, inbox };
 }
 
-/**
- * Quiet child threads live in their parent's header chip. Children selected
- * by `keepChild` stay in the inbox, as do orphans whose parent is off-screen.
- */
-export function hideQuietChildrenOfVisibleParents(
-  threads: readonly PluginSidebarThread[],
-  keepChild: (thread: PluginSidebarThread) => boolean,
-): PluginSidebarThread[] {
-  const visibleIds = new Set(threads.map((thread) => thread.id));
-  return threads.filter(
-    (thread) =>
-      thread.parentThreadId === null ||
-      !visibleIds.has(thread.parentThreadId) ||
-      keepChild(thread),
-  );
-}
-
 export interface NestedThread {
   thread: PluginSidebarThread;
   isNested: boolean;
@@ -146,8 +129,8 @@ export function nestChildrenUnderParents(
 /**
  * The parent of one thread, or null when the thread is a root, when the id is
  * unknown, or when the parent row is gone (deleted). The parent may be
- * archived or in another project: the flat list hides those, but the child
- * still needs a way back to them.
+ * archived or in another project: the current scope may omit those, but the
+ * child still needs a way back to them.
  */
 export function parentOf(
   threads: readonly PluginSidebarThread[],

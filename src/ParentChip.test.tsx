@@ -68,8 +68,7 @@ function render(
 afterEach(cleanup);
 
 describe("ParentChip", () => {
-  // The whole reason the chip exists: the list hides the child, so this is its
-  // only route back.
+  // The shortcut keeps the relationship available from the child itself.
   it("opens the parent on click", () => {
     const rendered = render(
       [

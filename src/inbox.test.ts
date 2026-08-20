@@ -3,7 +3,6 @@ import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
 import {
   childrenOf,
   filterByProject,
-  hideQuietChildrenOfVisibleParents,
   nestChildrenUnderParents,
   parentOf,
   partitionPinned,
@@ -157,39 +156,7 @@ describe("filtering", () => {
 });
 
 describe("child threads", () => {
-  it("hides a quiet child whose parent is on screen", () => {
-    const visible = hideQuietChildrenOfVisibleParents(
-      [
-        thread({ id: "parent" }),
-        thread({ id: "child", parentThreadId: "parent" }),
-      ],
-      () => false,
-    );
-    expect(visible.map((t) => t.id)).toEqual(["parent"]);
-  });
-
-  it("keeps a selected child whose parent is on screen", () => {
-    const visible = hideQuietChildrenOfVisibleParents(
-      [
-        thread({ id: "parent" }),
-        thread({ id: "child", parentThreadId: "parent" }),
-      ],
-      (candidate) => candidate.id === "child",
-    );
-    expect(visible.map((t) => t.id)).toEqual(["parent", "child"]);
-  });
-
-  // An orphan must stay visible: hidden here AND absent from any header chip
-  // would make it unreachable everywhere.
-  it("keeps a child whose parent is not on screen", () => {
-    const visible = hideQuietChildrenOfVisibleParents(
-      [thread({ id: "child", parentThreadId: "archived-parent" })],
-      () => false,
-    );
-    expect(visible.map((t) => t.id)).toEqual(["child"]);
-  });
-
-  it("places kept children directly below their parent", () => {
+  it("places children directly below their parent", () => {
     const nested = nestChildrenUnderParents([
       thread({ id: "new-root", createdAt: 30 }),
       thread({ id: "parent", createdAt: 20 }),
@@ -231,8 +198,8 @@ describe("child threads", () => {
 });
 
 describe("parentOf", () => {
-  // The list hides an archived parent, but the child's header must still get
-  // it back — otherwise the child is a dead end.
+  // The current scope may omit an archived parent, but the child's header
+  // still provides the relationship shortcut.
   it("finds a parent the inbox filters out", () => {
     const parent = parentOf(
       [

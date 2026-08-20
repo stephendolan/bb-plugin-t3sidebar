@@ -202,50 +202,33 @@ describe("ThreadInbox", () => {
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 
-  it("shows a working child directly below its parent", () => {
+  it("shows an unparked child directly below its parent", () => {
     render([
       thread({ id: "new-root", title: "New root", createdAt: 30 }),
       thread({ id: "parent", title: "Parent", createdAt: 20 }),
       thread({
         id: "child",
-        title: "Working child",
+        title: "Child thread",
         parentThreadId: "parent",
         createdAt: 40,
-        indicator: "runtime",
       }),
     ]);
     const rows = screen.getAllByRole("listitem");
     expect(rows.map((row) => row.textContent)).toEqual([
       expect.stringContaining("New root"),
       expect.stringContaining("Parent"),
-      expect.stringContaining("Working child"),
+      expect.stringContaining("Child thread"),
     ]);
     expect(rows[2]?.className).toContain("ml-4");
     expect(rows[2]?.className).toContain("after:border-t");
     expect(rows[2]?.className).toContain("before:h-1/2");
   });
 
-  it("keeps quiet children in the header unless selected or searched", () => {
-    const threads = [
+  it("shows quiet children without requiring selection", () => {
+    render([
       thread({ id: "parent", title: "Parent" }),
       thread({ id: "child", title: "Quiet child", parentThreadId: "parent" }),
-    ];
-    render(threads);
-    expect(screen.queryByText("Quiet child")).toBeNull();
-
-    cleanup();
-    renderSlot(
-      inbox,
-      { ...listProps, activeThreadId: "child" },
-      {
-        sidebarThreads: {
-          status: "ready",
-          threads,
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
-        },
-        rpc: { listLifecycle: () => ({ rows: [] }) },
-      },
-    );
+    ]);
     expect(screen.getByText("Quiet child")).toBeDefined();
   });
 
@@ -279,6 +262,40 @@ describe("ThreadInbox", () => {
 });
 
 describe("parking threads", () => {
+  it("moves a settled child to the same Settled shelf as a root", async () => {
+    renderSlot(inbox, listProps, {
+      sidebarThreads: {
+        status: "ready",
+        threads: [
+          thread({ id: "parent", title: "Parent" }),
+          thread({
+            id: "child",
+            title: "Settled child",
+            parentThreadId: "parent",
+          }),
+        ],
+        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+      },
+      rpc: {
+        listLifecycle: () => ({
+          rows: [
+            {
+              threadId: "child",
+              settledAt: 200,
+              snoozedUntil: null,
+              snoozedAt: null,
+            },
+          ],
+        }),
+      },
+    });
+    expect(await screen.findByText("Parent")).toBeDefined();
+    const shelf = await screen.findByRole("region", { name: "Settled" });
+    expect(screen.queryByText("Settled child")).toBeNull();
+    fireEvent.click(within(shelf).getByRole("button"));
+    expect(within(shelf).getByText("Settled child")).toBeDefined();
+  });
+
   it("moves a settled thread to the Settled shelf", async () => {
     renderSlot(inbox, listProps, {
       sidebarThreads: {
@@ -375,12 +392,19 @@ describe("parking threads", () => {
     await waitFor(() => expect(settled).toBe("thr_park"));
   });
 
-  it("shows the wake countdown on a snoozed row", async () => {
+  it("moves a snoozed child to the same Snoozed shelf as a root", async () => {
     const wakeAt = Date.now() + 2 * 60 * 60 * 1000;
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
-        threads: [thread({ id: "thr_snz", title: "Later" })],
+        threads: [
+          thread({ id: "parent", title: "Parent" }),
+          thread({
+            id: "thr_snz",
+            title: "Later",
+            parentThreadId: "parent",
+          }),
+        ],
         projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
       },
       rpc: {
@@ -396,6 +420,7 @@ describe("parking threads", () => {
         }),
       },
     });
+    expect(await screen.findByText("Parent")).toBeDefined();
     const shelf = await screen.findByRole("region", { name: "Snoozed" });
     fireEvent.click(within(shelf).getByRole("button"));
     expect(within(shelf).getByText("2h")).toBeDefined();

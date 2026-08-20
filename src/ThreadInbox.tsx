@@ -20,7 +20,6 @@ import { useLifecycle } from "./useLifecycle";
 import { TRAILING_GLYPH_BOX_CLASS } from "./StatusSlot";
 import {
   filterByProject,
-  hideQuietChildrenOfVisibleParents,
   nestChildrenUnderParents,
   partitionPinned,
   searchThreadsByTitle,
@@ -72,14 +71,7 @@ export function ThreadInbox({
       visibleInboxThreads(threads),
       scope === ALL_PROJECTS ? null : scope,
     );
-    const searching = searchQuery.trim().length > 0;
-    const matched = hideQuietChildrenOfVisibleParents(
-      searchThreadsByTitle(scoped, searchQuery),
-      (thread) =>
-        searching ||
-        thread.id === activeThreadId ||
-        !lifecycle.canPark(thread),
-    );
+    const matched = searchThreadsByTitle(scoped, searchQuery);
     const active: typeof matched = [];
     const onSnoozeShelf: typeof matched = [];
     const onSettledShelf: typeof matched = [];
@@ -100,7 +92,7 @@ export function ThreadInbox({
       ),
       settled: sortByCreatedAtDescending(onSettledShelf),
     };
-  }, [activeThreadId, lifecycle, scope, searchQuery, threads]);
+  }, [lifecycle, scope, searchQuery, threads]);
 
   const scopeLabel =
     scope === ALL_PROJECTS
