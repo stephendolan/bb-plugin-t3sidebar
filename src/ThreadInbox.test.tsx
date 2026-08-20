@@ -221,6 +221,8 @@ describe("ThreadInbox", () => {
       expect.stringContaining("Working child"),
     ]);
     expect(rows[2]?.className).toContain("ml-4");
+    expect(rows[2]?.className).toContain("after:border-t");
+    expect(rows[2]?.className).toContain("before:h-1/2");
   });
 
   it("keeps quiet children in the header unless selected or searched", () => {

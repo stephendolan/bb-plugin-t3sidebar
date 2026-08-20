@@ -158,7 +158,7 @@ export function ThreadInbox({
           <>
             {pinned.length > 0 ? (
               <Shelf label="Pinned">
-                {pinned.map(({ thread, isNested }) => (
+                {pinned.map(({ thread, isNested, isLastSibling }) => (
                   <ThreadCard
                     key={thread.id}
                     thread={thread}
@@ -170,13 +170,14 @@ export function ThreadInbox({
                     onSnooze={(until) => lifecycle.snooze(thread.id, until)}
                     now={now}
                     isNested={isNested}
+                    isLastSibling={isLastSibling}
                   />
                 ))}
               </Shelf>
             ) : null}
             {inbox.length > 0 ? (
               <Shelf label={pinned.length > 0 ? "Inbox" : null}>
-                {inbox.map(({ thread, isNested }) => (
+                {inbox.map(({ thread, isNested, isLastSibling }) => (
                   <ThreadCard
                     key={thread.id}
                     thread={thread}
@@ -188,6 +189,7 @@ export function ThreadInbox({
                     onSnooze={(until) => lifecycle.snooze(thread.id, until)}
                     now={now}
                     isNested={isNested}
+                    isLastSibling={isLastSibling}
                   />
                 ))}
               </Shelf>

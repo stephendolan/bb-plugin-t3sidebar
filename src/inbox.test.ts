@@ -208,6 +208,12 @@ describe("child threads", () => {
       true,
       true,
     ]);
+    expect(nested.map(({ isLastSibling }) => isLastSibling)).toEqual([
+      false,
+      false,
+      false,
+      true,
+    ]);
   });
 
   it("lists a thread's children oldest first", () => {

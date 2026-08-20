@@ -31,6 +31,7 @@ export function ThreadCard({
   onSnooze,
   now,
   isNested = false,
+  isLastSibling = false,
 }: {
   thread: PluginSidebarThread;
   projectName: string | null;
@@ -44,6 +45,8 @@ export function ThreadCard({
   now: number;
   /** A visible child rendered immediately after its parent. */
   isNested?: boolean;
+  /** Ends the child group's vertical connector at this row. */
+  isLastSibling?: boolean;
 }) {
   const actions = useSidebarThreadActions();
   const { splitProps, layout } = useSidebarThreadSplit(thread.id);
@@ -53,7 +56,17 @@ export function ThreadCard({
 
   return (
     <RowContextMenu thread={thread}>
-      <li className={cn("list-none", isNested && "ml-4")}>
+      <li
+        className={cn(
+          "list-none",
+          isNested && [
+            "relative ml-4 pl-2",
+            "before:absolute before:-left-px before:top-0 before:border-l before:border-sidebar-border",
+            "after:absolute after:-left-px after:top-1/2 after:w-2 after:border-t after:border-sidebar-border",
+            isLastSibling ? "before:h-1/2" : "before:h-full",
+          ],
+        )}
+      >
         <div
           className={cn(
             "group/card relative rounded-md px-2.5 py-2 transition-colors",

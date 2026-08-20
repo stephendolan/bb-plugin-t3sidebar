@@ -91,6 +91,7 @@ export function hideQuietChildrenOfVisibleParents(
 export interface NestedThread {
   thread: PluginSidebarThread;
   isNested: boolean;
+  isLastSibling: boolean;
 }
 
 /** Parents keep the static sort; included children sit directly below them. */
@@ -116,20 +117,29 @@ export function nestChildrenUnderParents(
 
   const nested: NestedThread[] = [];
   const visited = new Set<string>();
-  const append = (thread: PluginSidebarThread, isNested: boolean) => {
+  const append = (
+    thread: PluginSidebarThread,
+    isNested: boolean,
+    isLastSibling: boolean,
+  ) => {
     if (visited.has(thread.id)) return;
     visited.add(thread.id);
-    nested.push({ thread, isNested });
+    nested.push({ thread, isNested, isLastSibling });
     const children = childrenByParent.get(thread.id) ?? [];
-    for (const child of [...children].sort(
+    const sortedChildren = [...children].sort(
       (left, right) => left.createdAt - right.createdAt,
-    )) {
-      append(child, true);
+    );
+    for (const [index, child] of sortedChildren.entries()) {
+      append(child, true, index === sortedChildren.length - 1);
     }
   };
 
-  for (const root of sortByCreatedAtDescending(roots)) append(root, false);
-  for (const thread of sortByCreatedAtDescending(threads)) append(thread, false);
+  for (const root of sortByCreatedAtDescending(roots)) {
+    append(root, false, false);
+  }
+  for (const thread of sortByCreatedAtDescending(threads)) {
+    append(thread, false, false);
+  }
   return nested;
 }
 
