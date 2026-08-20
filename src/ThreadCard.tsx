@@ -30,6 +30,7 @@ export function ThreadCard({
   onSettle,
   onSnooze,
   now,
+  isNested = false,
 }: {
   thread: PluginSidebarThread;
   projectName: string | null;
@@ -41,6 +42,8 @@ export function ThreadCard({
   onSnooze: (snoozedUntil: number) => void;
   /** Quantized clock, so every card in one render agrees on "now". */
   now: number;
+  /** A visible child rendered immediately after its parent. */
+  isNested?: boolean;
 }) {
   const actions = useSidebarThreadActions();
   const { splitProps, layout } = useSidebarThreadSplit(thread.id);
@@ -50,7 +53,7 @@ export function ThreadCard({
 
   return (
     <RowContextMenu thread={thread}>
-      <li className="list-none">
+      <li className={cn("list-none", isNested && "ml-4")}>
         <div
           className={cn(
             "group/card relative rounded-md px-2.5 py-2 transition-colors",

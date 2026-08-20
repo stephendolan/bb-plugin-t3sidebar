@@ -202,6 +202,74 @@ describe("ThreadInbox", () => {
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 
+  it("shows a working child directly below its parent", () => {
+    render([
+      thread({ id: "new-root", title: "New root", createdAt: 30 }),
+      thread({ id: "parent", title: "Parent", createdAt: 20 }),
+      thread({
+        id: "child",
+        title: "Working child",
+        parentThreadId: "parent",
+        createdAt: 40,
+        indicator: "runtime",
+      }),
+    ]);
+    const rows = screen.getAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining("New root"),
+      expect.stringContaining("Parent"),
+      expect.stringContaining("Working child"),
+    ]);
+    expect(rows[2]?.className).toContain("ml-4");
+  });
+
+  it("keeps quiet children in the header unless selected or searched", () => {
+    const threads = [
+      thread({ id: "parent", title: "Parent" }),
+      thread({ id: "child", title: "Quiet child", parentThreadId: "parent" }),
+    ];
+    render(threads);
+    expect(screen.queryByText("Quiet child")).toBeNull();
+
+    cleanup();
+    renderSlot(
+      inbox,
+      { ...listProps, activeThreadId: "child" },
+      {
+        sidebarThreads: {
+          status: "ready",
+          threads,
+          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        },
+        rpc: { listLifecycle: () => ({ rows: [] }) },
+      },
+    );
+    expect(screen.getByText("Quiet child")).toBeDefined();
+  });
+
+  it("finds a quiet child through sidebar search", () => {
+    renderSlot(
+      inbox,
+      { ...listProps, searchQuery: "quiet child" },
+      {
+        sidebarThreads: {
+          status: "ready",
+          threads: [
+            thread({ id: "parent", title: "Parent" }),
+            thread({
+              id: "child",
+              title: "Quiet child",
+              parentThreadId: "parent",
+            }),
+          ],
+          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        },
+        rpc: { listLifecycle: () => ({ rows: [] }) },
+      },
+    );
+    expect(screen.getByText("Quiet child")).toBeDefined();
+  });
+
   it("reports an empty inbox and a fruitless search differently", () => {
     render([]);
     expect(screen.getByText("No threads yet")).toBeDefined();

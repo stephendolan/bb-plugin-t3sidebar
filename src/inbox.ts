@@ -72,21 +72,65 @@ export function partitionPinned(threads: readonly PluginSidebarThread[]): {
 }
 
 /**
- * Child threads leave the flat list and live in their parent's header chip
- * instead — a flat inbox has nowhere to nest them.
- *
- * A child is only hidden when its parent is actually on screen. An orphan
- * (parent archived, deleted, or filtered out by the project scope) stays in
- * the list, because hiding it would make it unreachable everywhere.
+ * Quiet child threads live in their parent's header chip. Children selected
+ * by `keepChild` stay in the inbox, as do orphans whose parent is off-screen.
  */
-export function hideChildrenOfVisibleParents(
+export function hideQuietChildrenOfVisibleParents(
   threads: readonly PluginSidebarThread[],
+  keepChild: (thread: PluginSidebarThread) => boolean,
 ): PluginSidebarThread[] {
   const visibleIds = new Set(threads.map((thread) => thread.id));
   return threads.filter(
     (thread) =>
-      thread.parentThreadId === null || !visibleIds.has(thread.parentThreadId),
+      thread.parentThreadId === null ||
+      !visibleIds.has(thread.parentThreadId) ||
+      keepChild(thread),
   );
+}
+
+export interface NestedThread {
+  thread: PluginSidebarThread;
+  isNested: boolean;
+}
+
+/** Parents keep the static sort; included children sit directly below them. */
+export function nestChildrenUnderParents(
+  threads: readonly PluginSidebarThread[],
+): NestedThread[] {
+  const includedIds = new Set(threads.map((thread) => thread.id));
+  const childrenByParent = new Map<string, PluginSidebarThread[]>();
+  const roots: PluginSidebarThread[] = [];
+
+  for (const thread of threads) {
+    if (
+      thread.parentThreadId === null ||
+      !includedIds.has(thread.parentThreadId)
+    ) {
+      roots.push(thread);
+      continue;
+    }
+    const siblings = childrenByParent.get(thread.parentThreadId) ?? [];
+    siblings.push(thread);
+    childrenByParent.set(thread.parentThreadId, siblings);
+  }
+
+  const nested: NestedThread[] = [];
+  const visited = new Set<string>();
+  const append = (thread: PluginSidebarThread, isNested: boolean) => {
+    if (visited.has(thread.id)) return;
+    visited.add(thread.id);
+    nested.push({ thread, isNested });
+    const children = childrenByParent.get(thread.id) ?? [];
+    for (const child of [...children].sort(
+      (left, right) => left.createdAt - right.createdAt,
+    )) {
+      append(child, true);
+    }
+  };
+
+  for (const root of sortByCreatedAtDescending(roots)) append(root, false);
+  for (const thread of sortByCreatedAtDescending(threads)) append(thread, false);
+  return nested;
 }
 
 /**

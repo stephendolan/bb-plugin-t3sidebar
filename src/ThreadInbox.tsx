@@ -20,7 +20,8 @@ import { useLifecycle } from "./useLifecycle";
 import { TRAILING_GLYPH_BOX_CLASS } from "./StatusSlot";
 import {
   filterByProject,
-  hideChildrenOfVisibleParents,
+  hideQuietChildrenOfVisibleParents,
+  nestChildrenUnderParents,
   partitionPinned,
   searchThreadsByTitle,
   sortByCreatedAtDescending,
@@ -71,11 +72,13 @@ export function ThreadInbox({
       visibleInboxThreads(threads),
       scope === ALL_PROJECTS ? null : scope,
     );
-    // Children live in their parent's header chip instead of the flat list;
-    // an orphan whose parent is not on screen stays here.
-    const matched = searchThreadsByTitle(
-      hideChildrenOfVisibleParents(scoped),
-      searchQuery,
+    const searching = searchQuery.trim().length > 0;
+    const matched = hideQuietChildrenOfVisibleParents(
+      searchThreadsByTitle(scoped, searchQuery),
+      (thread) =>
+        searching ||
+        thread.id === activeThreadId ||
+        !lifecycle.canPark(thread),
     );
     const active: typeof matched = [];
     const onSnoozeShelf: typeof matched = [];
@@ -88,8 +91,8 @@ export function ThreadInbox({
     }
     const split = partitionPinned(active);
     return {
-      pinned: sortByCreatedAtDescending(split.pinned),
-      inbox: sortByCreatedAtDescending(split.inbox),
+      pinned: nestChildrenUnderParents(split.pinned),
+      inbox: nestChildrenUnderParents(split.inbox),
       // Soonest wake first: "what comes back next" is the shelf's question.
       snoozed: [...onSnoozeShelf].sort(
         (left, right) =>
@@ -97,7 +100,7 @@ export function ThreadInbox({
       ),
       settled: sortByCreatedAtDescending(onSettledShelf),
     };
-  }, [lifecycle, scope, searchQuery, threads]);
+  }, [activeThreadId, lifecycle, scope, searchQuery, threads]);
 
   const scopeLabel =
     scope === ALL_PROJECTS
@@ -155,7 +158,7 @@ export function ThreadInbox({
           <>
             {pinned.length > 0 ? (
               <Shelf label="Pinned">
-                {pinned.map((thread) => (
+                {pinned.map(({ thread, isNested }) => (
                   <ThreadCard
                     key={thread.id}
                     thread={thread}
@@ -166,13 +169,14 @@ export function ThreadInbox({
                     onSettle={() => lifecycle.settle(thread.id)}
                     onSnooze={(until) => lifecycle.snooze(thread.id, until)}
                     now={now}
+                    isNested={isNested}
                   />
                 ))}
               </Shelf>
             ) : null}
             {inbox.length > 0 ? (
               <Shelf label={pinned.length > 0 ? "Inbox" : null}>
-                {inbox.map((thread) => (
+                {inbox.map(({ thread, isNested }) => (
                   <ThreadCard
                     key={thread.id}
                     thread={thread}
@@ -183,6 +187,7 @@ export function ThreadInbox({
                     onSettle={() => lifecycle.settle(thread.id)}
                     onSnooze={(until) => lifecycle.snooze(thread.id, until)}
                     now={now}
+                    isNested={isNested}
                   />
                 ))}
               </Shelf>
