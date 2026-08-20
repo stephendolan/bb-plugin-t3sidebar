@@ -433,9 +433,11 @@ describe("row context menu", () => {
 });
 
 describe("card metadata", () => {
-  it("always shows the provider glyph, even without a branch", async () => {
+  it("shows the provider glyph on the title line", async () => {
     render([thread({ id: "thr_p", providerId: "claude-code" })]);
-    expect(await screen.findByLabelText("Claude Code")).toBeDefined();
+    const title = await screen.findByText("A thread");
+    const provider = screen.getByLabelText("Claude Code");
+    expect(title.parentElement?.contains(provider)).toBe(true);
   });
 
   it("falls back to a neutral glyph for an unknown provider", async () => {
@@ -443,19 +445,7 @@ describe("card metadata", () => {
     expect(await screen.findByLabelText("some-new-agent")).toBeDefined();
   });
 
-  // A personal-project thread has a machine but no worktree, so the machine
-  // takes the branch's place instead of leaving the line blank.
-  it("shows the machine when the thread has no branch", async () => {
-    render([
-      thread({
-        id: "thr_m",
-        host: { id: "host_1", name: "Sawyer's MacBook" },
-      }),
-    ]);
-    expect(await screen.findByText("Sawyer's MacBook")).toBeDefined();
-  });
-
-  it("prefers the branch over the machine when both exist", async () => {
+  it("omits branch and machine metadata", async () => {
     render([
       thread({
         id: "thr_b",
@@ -468,7 +458,8 @@ describe("card metadata", () => {
         },
       }),
     ]);
-    expect(await screen.findByText("bb/feature")).toBeDefined();
+    await screen.findByText("A thread");
+    expect(screen.queryByText("bb/feature")).toBeNull();
     expect(screen.queryByText("Sawyer's MacBook")).toBeNull();
   });
 
@@ -576,9 +567,12 @@ describe("pull request badge", () => {
     const badge = await screen.findByRole("link", { name: "#412" });
     expect(badge.getAttribute("href")).toBe("https://github.com/o/r/pull/412");
     expect(badge.getAttribute("title")).toBe("Fix the flake");
+    expect(screen.getByText("A thread").parentElement?.contains(badge)).toBe(
+      true,
+    );
   });
 
-  it("shows no badge when the branch has no PR", async () => {
+  it("shows no badge when the thread has no PR", async () => {
     render([thread({ id: "thr_nopr" })]);
     await screen.findByText("A thread");
     expect(screen.queryByRole("link", { name: /^#/ })).toBeNull();

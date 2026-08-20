@@ -4,9 +4,8 @@ import { TRAILING_GLYPH_BOX_CLASS } from "./StatusSlot";
 /**
  * The agent a thread runs on, drawn by this plugin.
  *
- * Always rendered, so the card's third line has a fixed right edge even when
- * a thread has no branch. `providerId` is a free-form id, so an unknown
- * provider gets a neutral dot rather than nothing.
+ * Always rendered at the end of the title line. `providerId` is a free-form
+ * id, so an unknown provider gets a neutral dot rather than nothing.
  */
 export function ProviderGlyph({
   providerId,

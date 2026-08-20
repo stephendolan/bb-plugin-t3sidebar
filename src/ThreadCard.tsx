@@ -13,9 +13,9 @@ import { threadDisplayTitle } from "./inbox";
 import { resolveSnoozePresets } from "./lifecycle";
 
 /**
- * One thread as a three-line card: project and status, title, then branch and
- * activity. The card is the whole point of this sidebar — status lives in the
- * row instead of in its position, which is what lets the list stay still.
+ * One thread as a two-line card: project, activity, and status first; then
+ * title, pull request, and provider. Status lives in the row instead of in its
+ * position, which is what lets the list stay still.
  *
  * The row is a positioned container with a full-bleed anchor UNDER the
  * controls, the way bb's own thread row does it: a `<button>` inside an `<a>`
@@ -69,7 +69,7 @@ export function ThreadCard({
       >
         <div
           className={cn(
-            "group/card relative rounded-md px-2.5 py-2 transition-colors",
+            "group/card relative rounded-md px-2.5 py-1.5 transition-colors",
             isActive ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/60",
             // A thread open in another pane gets a weaker tint than the active
             // row, so the two states stay distinguishable.
@@ -96,6 +96,18 @@ export function ThreadCard({
             <span className="min-w-0 flex-1 truncate text-2xs font-medium text-muted-foreground">
               {projectName ?? " "}
             </span>
+            {thread.activity.workflows > 0 ? (
+              <ActivityCount
+                label="workflows"
+                count={thread.activity.workflows}
+              />
+            ) : null}
+            {thread.activity.backgroundAgents > 0 ? (
+              <ActivityCount
+                label="background agents"
+                count={thread.activity.backgroundAgents}
+              />
+            ) : null}
             {/* Status at rest, park actions on hover. Only the status yields,
                 so the project name never shifts. */}
             {canPark ? (
@@ -128,39 +140,13 @@ export function ThreadCard({
               // Weight alone carries unread. Fading the title — or the whole
               // card — makes a thread at rest read as disabled, and at rest is
               // what most of the list is most of the time.
-              "pointer-events-none relative mt-0.5 truncate text-sm text-foreground",
+              "pointer-events-none relative mt-0.5 flex h-5 min-w-0 items-center gap-1.5 text-foreground",
               thread.isUnread && "font-medium",
             )}
           >
-            {threadDisplayTitle(thread)}
-          </div>
-          <div className="pointer-events-none relative mt-0.5 flex h-4 items-center gap-1.5 text-2xs text-muted-foreground">
-            {/* A thread without a worktree still runs somewhere, so the
-                machine takes the branch's place rather than leaving the line
-                blank. */}
-            {thread.environment?.branchName ? (
-              <span className="min-w-0 flex-1 truncate font-mono">
-                {thread.environment.branchName}
-              </span>
-            ) : thread.host ? (
-              <span className="min-w-0 flex-1 truncate">
-                {thread.host.name}
-              </span>
-            ) : (
-              <span className="flex-1" />
-            )}
-            {thread.activity.workflows > 0 ? (
-              <ActivityCount
-                label="workflows"
-                count={thread.activity.workflows}
-              />
-            ) : null}
-            {thread.activity.backgroundAgents > 0 ? (
-              <ActivityCount
-                label="background agents"
-                count={thread.activity.backgroundAgents}
-              />
-            ) : null}
+            <span className="min-w-0 flex-1 truncate text-sm">
+              {threadDisplayTitle(thread)}
+            </span>
             {pullRequest ? (
               <a
                 href={pullRequest.url}
@@ -169,7 +155,7 @@ export function ThreadCard({
                 onClick={(event) => event.stopPropagation()}
                 title={pullRequest.title}
                 className={cn(
-                  "relative shrink-0 font-mono hover:underline",
+                  "pointer-events-auto relative shrink-0 font-mono text-2xs hover:underline",
                   pullRequest.state === "merged"
                     ? "text-[color:var(--pr-merged)]"
                     : pullRequest.attention === "checks_failed" ||
@@ -183,7 +169,6 @@ export function ThreadCard({
                 #{pullRequest.number}
               </a>
             ) : null}
-            {/* Always drawn, so the line has a fixed right edge. */}
             <ProviderGlyph providerId={thread.providerId} />
           </div>
         </div>

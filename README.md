@@ -27,10 +27,9 @@ away under your cursor because an agent finished something.
 
 Three shelves:
 
-- **Inbox** — three-line cards: project and one fixed-width status slot on the
-  first line; title on the second; then branch (or the machine, when a thread
-  has no worktree), activity counts, the pull-request number, and the agent
-  glyph. Pinned threads sit above.
+- **Inbox** — compact two-line cards: project, activity counts, and one
+  fixed-width status slot on the first line; title, pull-request number, and
+  agent glyph on the second. Pinned threads sit above.
 
   One slot, one marker, one width, so the whole column lines up. The slot
   shows the status glyph while a thread has something to say, and the age
