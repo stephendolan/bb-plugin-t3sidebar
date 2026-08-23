@@ -93,7 +93,7 @@ export function ThreadCard({
             onClick={onToggleChildren}
             onMouseEnter={() => onConnectorHighlight?.(true)}
             onMouseLeave={() => onConnectorHighlight?.(false)}
-            className="absolute -left-0.5 top-0 z-10 h-full w-2 cursor-pointer"
+            className="absolute -left-1.5 top-0 z-10 h-full w-3 cursor-pointer"
           />
         ) : null}
         <div
