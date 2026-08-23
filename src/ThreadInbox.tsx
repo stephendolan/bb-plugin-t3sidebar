@@ -60,6 +60,18 @@ export function ThreadInbox({
   const now = nowMinute * 60_000;
   const [showSnoozed, setShowSnoozed] = useState(false);
   const [showSettled, setShowSettled] = useState(false);
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const toggleChildren = (parentId: string) => {
+    setCollapsedParents((current) => {
+      const next = new Set(current);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  };
 
   const projectNameById = useMemo(
     () => new Map(projects.map((project) => [project.id, project.name])),
@@ -150,7 +162,13 @@ export function ThreadInbox({
           <>
             {pinned.length > 0 ? (
               <Shelf label="Pinned">
-                {pinned.map(({ thread, isNested, isLastSibling }) => (
+                {pinned.map(({ thread, isNested, isLastSibling }) => {
+                  const childThreads = pinned
+                    .filter((row) => row.thread.parentThreadId === thread.id)
+                    .map((row) => row.thread);
+                  const parentId = thread.parentThreadId;
+                  if (parentId && collapsedParents.has(parentId)) return null;
+                  return (
                   <ThreadCard
                     key={thread.id}
                     thread={thread}
@@ -163,13 +181,29 @@ export function ThreadInbox({
                     now={now}
                     isNested={isNested}
                     isLastSibling={isLastSibling}
+                    childThreads={childThreads}
+                    childrenCollapsed={collapsedParents.has(thread.id)}
+                    onToggleChildren={
+                      childThreads.length > 0
+                        ? () => toggleChildren(thread.id)
+                        : parentId
+                          ? () => toggleChildren(parentId)
+                          : undefined
+                    }
                   />
-                ))}
+                  );
+                })}
               </Shelf>
             ) : null}
             {inbox.length > 0 ? (
               <Shelf label={pinned.length > 0 ? "Inbox" : null}>
-                {inbox.map(({ thread, isNested, isLastSibling }) => (
+                {inbox.map(({ thread, isNested, isLastSibling }) => {
+                  const childThreads = inbox
+                    .filter((row) => row.thread.parentThreadId === thread.id)
+                    .map((row) => row.thread);
+                  const parentId = thread.parentThreadId;
+                  if (parentId && collapsedParents.has(parentId)) return null;
+                  return (
                   <ThreadCard
                     key={thread.id}
                     thread={thread}
@@ -182,8 +216,18 @@ export function ThreadInbox({
                     now={now}
                     isNested={isNested}
                     isLastSibling={isLastSibling}
+                    childThreads={childThreads}
+                    childrenCollapsed={collapsedParents.has(thread.id)}
+                    onToggleChildren={
+                      childThreads.length > 0
+                        ? () => toggleChildren(thread.id)
+                        : parentId
+                          ? () => toggleChildren(parentId)
+                          : undefined
+                    }
                   />
-                ))}
+                  );
+                })}
               </Shelf>
             ) : null}
             <ParkedShelf

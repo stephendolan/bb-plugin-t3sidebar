@@ -232,6 +232,23 @@ describe("ThreadInbox", () => {
     expect(screen.getByText("Quiet child")).toBeDefined();
   });
 
+  it("collapses children from their connector and expands them from the parent pill", () => {
+    render([
+      thread({ id: "parent", title: "Parent" }),
+      thread({ id: "child", title: "Child", parentThreadId: "parent" }),
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse children" }));
+    expect(screen.queryByText("Child")).toBeNull();
+    const pill = screen.getByRole("button", {
+      name: "1 child threads; expand",
+    });
+    expect(pill.textContent).toContain("1 children");
+
+    fireEvent.click(pill);
+    expect(screen.getByText("Child")).toBeDefined();
+  });
+
   it("finds a quiet child through sidebar search", () => {
     renderSlot(
       inbox,

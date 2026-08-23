@@ -31,9 +31,6 @@ export function SubagentsChip({
   const children = childrenOf(threads, threadId);
   if (children.length === 0) return null;
 
-  const needsYou = children.some((child) => child.hasPendingInteraction);
-  const label = needsYou ? "Needs you" : `${children.length} children`;
-
   return (
     <span className="relative">
       <button
@@ -41,14 +38,12 @@ export function SubagentsChip({
         aria-expanded={open}
         aria-label={`${children.length} child threads`}
         onClick={() => setOpen((value) => !value)}
-        className={cn(
-          "flex h-7 items-center gap-1.5 rounded-full border border-border px-2 text-2xs text-muted-foreground",
-          "hover:bg-accent hover:text-foreground",
-          open && "bg-accent text-foreground",
-        )}
+        className={childrenPillClassName(open)}
       >
-        <DiscCluster threads={children} />
-        {isCompactViewport ? null : <span className="truncate">{label}</span>}
+        <ChildrenPillContents
+          threads={children}
+          hideLabel={isCompactViewport}
+        />
       </button>
       {open ? (
         <>
@@ -106,20 +101,39 @@ export function SubagentsChip({
   );
 }
 
-function DiscCluster({ threads }: { threads: readonly PluginSidebarThread[] }) {
+export function ChildrenPillContents({
+  threads,
+  hideLabel = false,
+}: {
+  threads: readonly PluginSidebarThread[];
+  hideLabel?: boolean;
+}) {
+  const needsYou = threads.some((thread) => thread.hasPendingInteraction);
+  const label = needsYou ? "Needs you" : `${threads.length} children`;
   const shown = threads.slice(0, MAX_DISCS);
   return (
-    <span className="flex shrink-0 items-center" aria-hidden>
-      {shown.map((thread, index) => (
-        <span key={thread.id} className={cn(index > 0 && "-ml-1.5")}>
-          <Disc thread={thread} />
-        </span>
-      ))}
-      {threads.length > MAX_DISCS ? (
-        <span className="-ml-1.5">
-          <Disc thread={null} />
-        </span>
-      ) : null}
-    </span>
+    <>
+      <span className="flex shrink-0 items-center" aria-hidden>
+        {shown.map((thread, index) => (
+          <span key={thread.id} className={cn(index > 0 && "-ml-1.5")}>
+            <Disc thread={thread} />
+          </span>
+        ))}
+        {threads.length > MAX_DISCS ? (
+          <span className="-ml-1.5">
+            <Disc thread={null} />
+          </span>
+        ) : null}
+      </span>
+      {hideLabel ? null : <span className="truncate">{label}</span>}
+    </>
+  );
+}
+
+export function childrenPillClassName(active = false) {
+  return cn(
+    "flex h-7 items-center gap-1.5 rounded-full border border-border px-2 text-2xs text-muted-foreground",
+    "hover:bg-accent hover:text-foreground",
+    active && "bg-accent text-foreground",
   );
 }

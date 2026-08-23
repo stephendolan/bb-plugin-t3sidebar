@@ -11,6 +11,10 @@ import { ProviderGlyph } from "./ProviderGlyph";
 import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
 import { resolveSnoozePresets } from "./lifecycle";
+import {
+  ChildrenPillContents,
+  childrenPillClassName,
+} from "./SubagentsChip";
 
 /**
  * One thread as a two-line card: project, activity, and status first; then
@@ -32,6 +36,9 @@ export function ThreadCard({
   now,
   isNested = false,
   isLastSibling = false,
+  childThreads = [],
+  childrenCollapsed = false,
+  onToggleChildren,
 }: {
   thread: PluginSidebarThread;
   projectName: string | null;
@@ -47,6 +54,9 @@ export function ThreadCard({
   isNested?: boolean;
   /** Ends the child group's vertical connector at this row. */
   isLastSibling?: boolean;
+  childThreads?: readonly PluginSidebarThread[];
+  childrenCollapsed?: boolean;
+  onToggleChildren?: () => void;
 }) {
   const actions = useSidebarThreadActions();
   const { splitProps, layout } = useSidebarThreadSplit(thread.id);
@@ -67,6 +77,14 @@ export function ThreadCard({
           ],
         )}
       >
+        {isNested && onToggleChildren ? (
+          <button
+            type="button"
+            aria-label="Collapse children"
+            onClick={onToggleChildren}
+            className="absolute -left-1 top-0 z-10 h-full w-3 cursor-pointer rounded hover:bg-sidebar-accent/60"
+          />
+        ) : null}
         <div
           className={cn(
             "group/card relative rounded-md px-2.5 py-1.5 transition-colors",
@@ -171,6 +189,23 @@ export function ThreadCard({
             ) : null}
             <ProviderGlyph providerId={thread.providerId} />
           </div>
+          {childrenCollapsed && childThreads.length > 0 && onToggleChildren ? (
+            <div className="pointer-events-auto relative mt-1 flex">
+              <button
+                type="button"
+                aria-expanded={false}
+                aria-label={`${childThreads.length} child threads; expand`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onToggleChildren();
+                }}
+                className={childrenPillClassName()}
+              >
+                <ChildrenPillContents threads={childThreads} />
+              </button>
+            </div>
+          ) : null}
         </div>
       </li>
     </RowContextMenu>
