@@ -213,6 +213,9 @@ describe("ThreadInbox", () => {
         createdAt: 40,
       }),
     ]);
+    fireEvent.click(
+      screen.getByRole("button", { name: "1 child threads; expand" }),
+    );
     const rows = screen.getAllByRole("listitem");
     expect(rows.map((row) => row.textContent)).toEqual([
       expect.stringContaining("New root"),
@@ -224,21 +227,23 @@ describe("ThreadInbox", () => {
     expect(rows[2]?.className).toContain("before:h-1/2");
   });
 
-  it("shows quiet children without requiring selection", () => {
+  it("summarizes quiet children under their parent by default", () => {
     render([
       thread({ id: "parent", title: "Parent" }),
       thread({ id: "child", title: "Quiet child", parentThreadId: "parent" }),
     ]);
-    expect(screen.getByText("Quiet child")).toBeDefined();
+    expect(screen.queryByText("Quiet child")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "1 child threads; expand" }),
+    ).toBeDefined();
   });
 
-  it("collapses children from their connector and expands them from the parent pill", () => {
+  it("expands children from the parent pill and collapses them from their connector", () => {
     render([
       thread({ id: "parent", title: "Parent" }),
       thread({ id: "child", title: "Child", parentThreadId: "parent" }),
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Collapse children" }));
     expect(screen.queryByText("Child")).toBeNull();
     const pill = screen.getByRole("button", {
       name: "1 child threads; expand",
@@ -247,6 +252,25 @@ describe("ThreadInbox", () => {
 
     fireEvent.click(pill);
     expect(screen.getByText("Child")).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse children" }));
+    expect(screen.queryByText("Child")).toBeNull();
+  });
+
+  it("shows a spinner in the collapsed pill while a child runs", () => {
+    render([
+      thread({ id: "parent", title: "Parent" }),
+      thread({
+        id: "child",
+        title: "Running child",
+        parentThreadId: "parent",
+        indicator: "runtime",
+        indicatorLabel: "Running",
+      }),
+    ]);
+
+    expect(screen.queryByText("Running child")).toBeNull();
+    expect(screen.getByLabelText("A child thread is running")).toBeDefined();
   });
 
   it("highlights the whole sibling rail from any connector segment", () => {
@@ -256,6 +280,9 @@ describe("ThreadInbox", () => {
       thread({ id: "second", title: "Second", parentThreadId: "parent" }),
     ]);
 
+    fireEvent.click(
+      screen.getByRole("button", { name: "2 child threads; expand" }),
+    );
     const connectors = screen.getAllByRole("button", {
       name: "Collapse children",
     });

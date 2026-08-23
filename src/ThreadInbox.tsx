@@ -60,7 +60,7 @@ export function ThreadInbox({
   const now = nowMinute * 60_000;
   const [showSnoozed, setShowSnoozed] = useState(false);
   const [showSettled, setShowSettled] = useState(false);
-  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(
     () => new Set(),
   );
   const [highlightedParent, setHighlightedParent] = useState<string | null>(
@@ -68,7 +68,7 @@ export function ThreadInbox({
   );
 
   const toggleChildren = (parentId: string) => {
-    setCollapsedParents((current) => {
+    setExpandedParents((current) => {
       const next = new Set(current);
       if (next.has(parentId)) next.delete(parentId);
       else next.add(parentId);
@@ -170,7 +170,12 @@ export function ThreadInbox({
                     .filter((row) => row.thread.parentThreadId === thread.id)
                     .map((row) => row.thread);
                   const parentId = thread.parentThreadId;
-                  if (parentId && collapsedParents.has(parentId)) return null;
+                  const parentInShelf =
+                    parentId !== null &&
+                    pinned.some((row) => row.thread.id === parentId);
+                  if (parentInShelf && !expandedParents.has(parentId)) {
+                    return null;
+                  }
                   return (
                   <ThreadCard
                     key={thread.id}
@@ -185,17 +190,19 @@ export function ThreadInbox({
                     isNested={isNested}
                     isLastSibling={isLastSibling}
                     childThreads={childThreads}
-                    childrenCollapsed={collapsedParents.has(thread.id)}
+                    childrenCollapsed={
+                      childThreads.length > 0 && !expandedParents.has(thread.id)
+                    }
                     onToggleChildren={
                       childThreads.length > 0
                         ? () => toggleChildren(thread.id)
-                        : parentId
+                        : parentInShelf
                           ? () => toggleChildren(parentId)
                           : undefined
                     }
                     connectorHighlighted={parentId === highlightedParent}
                     onConnectorHighlight={
-                      parentId
+                      parentInShelf
                         ? (highlighted) =>
                             setHighlightedParent(highlighted ? parentId : null)
                         : undefined
@@ -212,7 +219,12 @@ export function ThreadInbox({
                     .filter((row) => row.thread.parentThreadId === thread.id)
                     .map((row) => row.thread);
                   const parentId = thread.parentThreadId;
-                  if (parentId && collapsedParents.has(parentId)) return null;
+                  const parentInShelf =
+                    parentId !== null &&
+                    inbox.some((row) => row.thread.id === parentId);
+                  if (parentInShelf && !expandedParents.has(parentId)) {
+                    return null;
+                  }
                   return (
                   <ThreadCard
                     key={thread.id}
@@ -227,17 +239,19 @@ export function ThreadInbox({
                     isNested={isNested}
                     isLastSibling={isLastSibling}
                     childThreads={childThreads}
-                    childrenCollapsed={collapsedParents.has(thread.id)}
+                    childrenCollapsed={
+                      childThreads.length > 0 && !expandedParents.has(thread.id)
+                    }
                     onToggleChildren={
                       childThreads.length > 0
                         ? () => toggleChildren(thread.id)
-                        : parentId
+                        : parentInShelf
                           ? () => toggleChildren(parentId)
                           : undefined
                     }
                     connectorHighlighted={parentId === highlightedParent}
                     onConnectorHighlight={
-                      parentId
+                      parentInShelf
                         ? (highlighted) =>
                             setHighlightedParent(highlighted ? parentId : null)
                         : undefined

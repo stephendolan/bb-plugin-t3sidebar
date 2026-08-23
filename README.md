@@ -50,9 +50,9 @@ children move to their matching shelves. Working children and children that
 need input return to the inbox through the same wake rules. Two header chips
 keep the complete relationship close at hand:
 
-Click a child group's connector rail to collapse it. The parent then shows the
-same children pill used in the thread header; click the pill to expand the
-children in place.
+Child groups start collapsed into the same children pill used in the thread
+header. The pill shows a spinner while any child is running. Click it to expand
+the children in place, then click the connector rail to collapse them again.
 
 - On a parent: a chip with one coloured disc per child. It opens the list of
   children.

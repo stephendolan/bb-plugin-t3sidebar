@@ -109,6 +109,7 @@ export function ChildrenPillContents({
   hideLabel?: boolean;
 }) {
   const needsYou = threads.some((thread) => thread.hasPendingInteraction);
+  const isRunning = threads.some((thread) => thread.indicator === "runtime");
   const label = needsYou ? "Needs you" : `${threads.length} children`;
   const shown = threads.slice(0, MAX_DISCS);
   return (
@@ -126,6 +127,13 @@ export function ChildrenPillContents({
         ) : null}
       </span>
       {hideLabel ? null : <span className="truncate">{label}</span>}
+      {isRunning ? (
+        <StatusGlyph
+          indicator="runtime"
+          label="A child thread is running"
+          className="size-3"
+        />
+      ) : null}
     </>
   );
 }
