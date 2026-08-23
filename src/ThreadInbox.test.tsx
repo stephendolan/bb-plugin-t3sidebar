@@ -427,7 +427,8 @@ describe("parking threads", () => {
     });
     const shelf = await screen.findByRole("region", { name: "Settled" });
     fireEvent.click(within(shelf).getByRole("button"));
-    expect(within(shelf).getByText("1 children")).toBeDefined();
+    expect(within(shelf).getByText("1")).toBeDefined();
+    expect(within(shelf).queryByText("1 children")).toBeNull();
     const parentRow = within(shelf).getByText("Settled parent").closest("li")!;
     fireEvent.click(within(parentRow).getByLabelText("Un-settle thread"));
     await waitFor(() => expect(restored).toEqual(["parent", "child"]));
