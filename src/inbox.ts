@@ -151,3 +151,28 @@ export function childrenOf(
     .filter((thread) => thread.parentThreadId === parentThreadId)
     .sort((left, right) => left.createdAt - right.createdAt);
 }
+
+/** Every descendant of one thread, breadth-first and oldest sibling first. */
+export function descendantsOf(
+  threads: readonly PluginSidebarThread[],
+  parentThreadId: string,
+): PluginSidebarThread[] {
+  const descendants: PluginSidebarThread[] = [];
+  const queue = childrenOf(threads, parentThreadId);
+  const visited = new Set([parentThreadId]);
+  while (queue.length > 0) {
+    const thread = queue.shift()!;
+    if (visited.has(thread.id)) continue;
+    visited.add(thread.id);
+    descendants.push(thread);
+    queue.push(...childrenOf(threads, thread.id));
+  }
+  return descendants;
+}
+
+export function familyOf(
+  threads: readonly PluginSidebarThread[],
+  parent: PluginSidebarThread,
+): PluginSidebarThread[] {
+  return [parent, ...descendantsOf(threads, parent.id)];
+}

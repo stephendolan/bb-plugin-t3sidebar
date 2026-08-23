@@ -395,6 +395,44 @@ describe("parking threads", () => {
     expect(within(shelf).getByText("Finished work")).toBeDefined();
   });
 
+  it("shows settled descendants on the parent and restores the family", async () => {
+    let restored: string[] = [];
+    renderSlot(inbox, listProps, {
+      sidebarThreads: {
+        status: "ready",
+        threads: [
+          thread({ id: "parent", title: "Settled parent" }),
+          thread({
+            id: "child",
+            title: "Settled child",
+            parentThreadId: "parent",
+          }),
+        ],
+        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+      },
+      rpc: {
+        listLifecycle: () => ({
+          rows: ["parent", "child"].map((threadId) => ({
+            threadId,
+            settledAt: 200,
+            snoozedUntil: null,
+            snoozedAt: null,
+          })),
+        }),
+        unsettleMany: (input) => {
+          restored = (input as { threadIds: string[] }).threadIds;
+          return { ok: true };
+        },
+      },
+    });
+    const shelf = await screen.findByRole("region", { name: "Settled" });
+    fireEvent.click(within(shelf).getByRole("button"));
+    expect(within(shelf).getByText("1 children")).toBeDefined();
+    const parentRow = within(shelf).getByText("Settled parent").closest("li")!;
+    fireEvent.click(within(parentRow).getByLabelText("Un-settle thread"));
+    await waitFor(() => expect(restored).toEqual(["parent", "child"]));
+  });
+
   it("keeps a working thread out of the shelves and offers no park action", async () => {
     renderSlot(inbox, listProps, {
       sidebarThreads: {
@@ -443,7 +481,7 @@ describe("parking threads", () => {
   });
 
   it("settles a thread when the user clicks Settle", async () => {
-    let settled: string | null = null;
+    let settled: string[] = [];
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
@@ -452,14 +490,40 @@ describe("parking threads", () => {
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
-        settle: (input) => {
-          settled = (input as { threadId: string }).threadId;
+        settleMany: (input) => {
+          settled = (input as { threadIds: string[] }).threadIds;
           return { ok: true };
         },
       },
     });
     fireEvent.click(await screen.findByLabelText("Settle thread"));
-    await waitFor(() => expect(settled).toBe("thr_park"));
+    await waitFor(() => expect(settled).toEqual(["thr_park"]));
+  });
+
+  it("settles a parent and all of its descendants together", async () => {
+    let settled: string[] = [];
+    renderSlot(inbox, listProps, {
+      sidebarThreads: {
+        status: "ready",
+        threads: [
+          thread({ id: "parent", title: "Parent" }),
+          thread({ id: "child", parentThreadId: "parent" }),
+          thread({ id: "grandchild", parentThreadId: "child" }),
+        ],
+        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+      },
+      rpc: {
+        listLifecycle: () => ({ rows: [] }),
+        settleMany: (input) => {
+          settled = (input as { threadIds: string[] }).threadIds;
+          return { ok: true };
+        },
+      },
+    });
+    fireEvent.click((await screen.findAllByLabelText("Settle thread"))[0]!);
+    await waitFor(() =>
+      expect(settled).toEqual(["parent", "child", "grandchild"]),
+    );
   });
 
   it("moves a snoozed child to the same Snoozed shelf as a root", async () => {

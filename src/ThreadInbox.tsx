@@ -20,6 +20,8 @@ import { useLifecycle } from "./useLifecycle";
 import { TRAILING_GLYPH_BOX_CLASS } from "./StatusSlot";
 import {
   filterByProject,
+  descendantsOf,
+  familyOf,
   nestChildrenUnderParents,
   partitionPinned,
   searchThreadsByTitle,
@@ -184,7 +186,11 @@ export function ThreadInbox({
                     isActive={thread.id === activeThreadId}
                     canPark={lifecycle.canPark(thread)}
                     onNavigate={onNavigate}
-                    onSettle={() => lifecycle.settle(thread.id)}
+                    onSettle={() =>
+                      lifecycle.settleMany(
+                        familyOf(threads, thread).map(({ id }) => id),
+                      )
+                    }
                     onSnooze={(until) => lifecycle.snooze(thread.id, until)}
                     now={now}
                     isNested={isNested}
@@ -233,7 +239,11 @@ export function ThreadInbox({
                     isActive={thread.id === activeThreadId}
                     canPark={lifecycle.canPark(thread)}
                     onNavigate={onNavigate}
-                    onSettle={() => lifecycle.settle(thread.id)}
+                    onSettle={() =>
+                      lifecycle.settleMany(
+                        familyOf(threads, thread).map(({ id }) => id),
+                      )
+                    }
                     onSnooze={(until) => lifecycle.snooze(thread.id, until)}
                     now={now}
                     isNested={isNested}
@@ -352,7 +362,14 @@ function ParkedShelf({
               onRestore={() =>
                 shelf === "snoozed"
                   ? lifecycle.unsnooze(thread.id)
-                  : lifecycle.unsettle(thread.id)
+                  : lifecycle.unsettleMany(
+                      familyOf(threads, thread).map(({ id }) => id),
+                    )
+              }
+              childThreads={
+                shelf === "settled"
+                  ? descendantsOf(threads, thread.id)
+                  : []
               }
             />
           ))}

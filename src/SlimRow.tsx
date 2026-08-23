@@ -8,6 +8,7 @@ import { RowContextMenu } from "./RowContextMenu";
 import { STATUS_SLOT_CLASS, StatusOrTime } from "./StatusSlot";
 import { threadDisplayTitle } from "./inbox";
 import { snoozeWakeLabel } from "./lifecycle";
+import { ChildrenPillContents } from "./SubagentsChip";
 
 /**
  * A parked thread: one line instead of a card. Density comes from the user
@@ -24,6 +25,7 @@ export function SlimRow({
   now,
   onNavigate,
   onRestore,
+  childThreads = [],
 }: {
   thread: PluginSidebarThread;
   isActive: boolean;
@@ -32,6 +34,7 @@ export function SlimRow({
   now: number;
   onNavigate: () => void;
   onRestore: () => void;
+  childThreads?: readonly PluginSidebarThread[];
 }) {
   const actions = useSidebarThreadActions();
   const title = threadDisplayTitle(thread);
@@ -68,6 +71,11 @@ export function SlimRow({
           >
             {title}
           </span>
+          {childThreads.length > 0 ? (
+            <span className="pointer-events-none relative shrink-0 rounded-full border border-border px-1.5 py-0.5 text-2xs text-muted-foreground">
+              <ChildrenPillContents threads={childThreads} />
+            </span>
+          ) : null}
           {/* The same slot as a card, so a shelf keeps the card's column. A
               snoozed row spends it on the wake time: when the thread comes
               BACK is that shelf's whole question, and it outranks an age the

@@ -28,8 +28,8 @@ export interface LifecycleApi {
   shelfFor(thread: PluginSidebarThread): ThreadShelf;
   canPark(thread: PluginSidebarThread): boolean;
   wakeAtFor(thread: PluginSidebarThread): number | null;
-  settle(threadId: string): void;
-  unsettle(threadId: string): void;
+  settleMany(threadIds: readonly string[]): void;
+  unsettleMany(threadIds: readonly string[]): void;
   snooze(threadId: string, snoozedUntil: number): void;
   unsnooze(threadId: string): void;
 }
@@ -96,10 +96,7 @@ export function useLifecycle(
     });
     // One read per mutation: the write publishes on the realtime channel, and
     // that subscription already triggers a refresh for every client.
-    const mutate = async (
-      method: "settle" | "unsettle" | "unsnooze",
-      threadId: string,
-    ) => {
+    const mutate = async (method: "unsnooze", threadId: string) => {
       await rpc.call(method, { threadId });
     };
     return {
@@ -107,8 +104,12 @@ export function useLifecycle(
         resolveShelf(rows.get(thread.id), signalsFor(thread), now),
       canPark: (thread) => canPark(signalsFor(thread)),
       wakeAtFor: (thread) => rows.get(thread.id)?.snoozedUntil ?? null,
-      settle: (threadId) => void mutate("settle", threadId),
-      unsettle: (threadId) => void mutate("unsettle", threadId),
+      settleMany: (threadIds) => {
+        void rpc.call("settleMany", { threadIds: [...threadIds] });
+      },
+      unsettleMany: (threadIds) => {
+        void rpc.call("unsettleMany", { threadIds: [...threadIds] });
+      },
       unsnooze: (threadId) => void mutate("unsnooze", threadId),
       snooze: (threadId, snoozedUntil) => {
         void rpc.call("snooze", { threadId, snoozedUntil });

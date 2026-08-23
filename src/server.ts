@@ -31,6 +31,9 @@ interface LifecycleDbRow {
 }
 
 const threadIdSchema = z.object({ threadId: z.string().trim().min(1) });
+const threadIdsSchema = z.object({
+  threadIds: z.array(z.string().trim().min(1)).min(1),
+});
 
 export const t3sidebarRpcContract = defineRpcContract({
   listLifecycle: {
@@ -46,8 +49,8 @@ export const t3sidebarRpcContract = defineRpcContract({
       ),
     }),
   },
-  settle: { input: threadIdSchema, output: z.object({ ok: z.boolean() }) },
-  unsettle: { input: threadIdSchema, output: z.object({ ok: z.boolean() }) },
+  settleMany: { input: threadIdsSchema, output: z.object({ ok: z.boolean() }) },
+  unsettleMany: { input: threadIdsSchema, output: z.object({ ok: z.boolean() }) },
   snooze: {
     input: z.object({
       threadId: z.string().trim().min(1),
@@ -101,23 +104,39 @@ export default function plugin(bb: BbPluginApi) {
     bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
   };
 
+  const settleMany = db.transaction((threadIds: readonly string[]) => {
+    const settledAt = Date.now();
+    for (const threadId of new Set(threadIds)) {
+      db.prepare(
+        `INSERT INTO thread_lifecycle
+           (thread_id, settled_at, snoozed_until, snoozed_at)
+         VALUES (?, ?, NULL, NULL)
+         ON CONFLICT(thread_id) DO UPDATE SET
+           settled_at = excluded.settled_at,
+           snoozed_until = NULL,
+           snoozed_at = NULL`,
+      ).run(threadId, settledAt);
+    }
+  });
+  const unsettleMany = db.transaction((threadIds: readonly string[]) => {
+    const statement = db.prepare(
+      `DELETE FROM thread_lifecycle WHERE thread_id = ?`,
+    );
+    for (const threadId of new Set(threadIds)) statement.run(threadId);
+  });
+
   bb.rpc.register(t3sidebarRpcContract, {
     async listLifecycle() {
       return { rows: readAll() };
     },
-    async settle({ threadId }) {
-      // Settling clears any snooze: they are two answers to the same
-      // question, and holding both would make the shelf order ambiguous.
-      write({
-        threadId,
-        settledAt: Date.now(),
-        snoozedUntil: null,
-        snoozedAt: null,
-      });
+    async settleMany({ threadIds }) {
+      settleMany(threadIds);
+      bb.realtime.publish(LIFECYCLE_CHANNEL, { threadIds });
       return { ok: true };
     },
-    async unsettle({ threadId }) {
-      clear(threadId);
+    async unsettleMany({ threadIds }) {
+      unsettleMany(threadIds);
+      bb.realtime.publish(LIFECYCLE_CHANNEL, { threadIds });
       return { ok: true };
     },
     async snooze({ threadId, snoozedUntil }) {

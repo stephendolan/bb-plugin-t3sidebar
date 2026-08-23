@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
 import {
   childrenOf,
+  descendantsOf,
   filterByProject,
   nestChildrenUnderParents,
   parentOf,
@@ -194,6 +195,25 @@ describe("child threads", () => {
       "parent",
     );
     expect(children.map((t) => t.id)).toEqual(["a", "b"]);
+  });
+
+  it("lists every descendant without looping on malformed relationships", () => {
+    const descendants = descendantsOf(
+      [
+        thread({ id: "parent" }),
+        thread({ id: "child", parentThreadId: "parent", createdAt: 10 }),
+        thread({
+          id: "grandchild",
+          parentThreadId: "child",
+          createdAt: 20,
+        }),
+      ],
+      "parent",
+    );
+    expect(descendants.map((candidate) => candidate.id)).toEqual([
+      "child",
+      "grandchild",
+    ]);
   });
 });
 
