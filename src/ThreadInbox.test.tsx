@@ -224,7 +224,8 @@ describe("ThreadInbox", () => {
     ]);
     expect(rows[2]?.className).toContain("ml-4");
     expect(rows[2]?.className).toContain("after:border-t");
-    expect(rows[2]?.className).toContain("before:h-1/2");
+    expect(rows[2]?.className).toContain("before:h-[calc(50%+1px)]");
+    expect(rows[2]?.className).toContain("before:-top-px");
   });
 
   it("summarizes quiet children under their parent by default", () => {

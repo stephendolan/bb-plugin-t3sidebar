@@ -75,12 +75,14 @@ export function ThreadCard({
           "list-none",
           isNested && [
             "relative ml-4 pl-2",
-            "before:absolute before:left-0 before:top-0 before:border-l before:transition-colors",
+            "before:absolute before:-top-px before:left-0 before:border-l before:transition-colors",
             "after:absolute after:left-0 after:top-1/2 after:w-2 after:border-t after:transition-colors",
             connectorHighlighted
               ? "before:border-foreground/35 after:border-foreground/35"
               : "before:border-sidebar-border after:border-sidebar-border",
-            isLastSibling ? "before:h-1/2" : "before:h-full",
+            isLastSibling
+              ? "before:h-[calc(50%+1px)]"
+              : "before:-bottom-px",
           ],
         )}
       >
