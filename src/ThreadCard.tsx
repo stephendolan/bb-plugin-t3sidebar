@@ -82,7 +82,7 @@ export function ThreadCard({
               : "before:border-sidebar-border after:border-sidebar-border",
             isLastSibling
               ? "before:h-[calc(50%+1px)]"
-              : "before:-bottom-px",
+              : "before:bottom-0",
           ],
         )}
       >
