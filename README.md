@@ -42,6 +42,11 @@ Three shelves:
   back early if it starts working or asks you something.
 - **Settled** — work you are done with, collapsed to one line each.
 
+Settled threads can optionally be auto-archived after 3, 7, or 14 quiet days.
+The default is Never. Auto-archive re-checks that the thread is idle, has no
+pending interaction or background work, and has received no new attention
+since it was settled before using BB's native archive action.
+
 ## Child threads stay reachable
 
 Child threads follow the same lifecycle rules as roots. Children on the active

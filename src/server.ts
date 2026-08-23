@@ -6,6 +6,12 @@
 // understands. Here, uninstalling the plugin removes its state with it.
 import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
+import {
+  AUTO_ARCHIVE_OPTIONS,
+  autoArchiveDelayMs,
+  safeArchiveRoots,
+  shouldAutoArchive,
+} from "./auto-archive";
 
 const migrations = [
   `CREATE TABLE IF NOT EXISTS thread_lifecycle (
@@ -66,6 +72,15 @@ export const t3sidebarRpcContract = defineRpcContract({
 export const LIFECYCLE_CHANNEL = "lifecycle";
 
 export default function plugin(bb: BbPluginApi) {
+  const settings = bb.settings.define({
+    autoArchiveSettledAfter: {
+      type: "select",
+      label: "Auto-archive settled threads after",
+      description: "Uses BB's native archive after a thread stays settled and inactive for this long.",
+      options: [...AUTO_ARCHIVE_OPTIONS],
+      default: "Never",
+    },
+  });
   const db = bb.storage.database();
   bb.storage.migrate(db, migrations);
 
@@ -155,8 +170,57 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  // A deleted thread must not leave a row behind that would park a future
-  // thread reusing the id, and stale rows accumulate otherwise.
+  bb.background.schedule("auto-archive-settled", "17 * * * *", async () => {
+    const delayMs = autoArchiveDelayMs(
+      (await settings.get()).autoArchiveSettledAfter,
+    );
+    if (delayMs === null) return;
+
+    const now = Date.now();
+    const candidates = readAll().filter(
+      (row): row is StoredLifecycleRow & { settledAt: number } =>
+        row.settledAt !== null && row.settledAt + delayMs <= now,
+    );
+    if (candidates.length === 0) return;
+
+    const liveThreads = new Map<
+      string,
+      Awaited<ReturnType<typeof bb.sdk.threads.list>>[number]
+    >();
+    const pageSize = 200;
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await bb.sdk.threads.list({
+        archived: false,
+        includeHidden: true,
+        limit: pageSize,
+        offset,
+      });
+      for (const thread of page) {
+        liveThreads.set(thread.id, thread);
+      }
+      if (page.length < pageSize) break;
+    }
+
+    const eligibleIds = new Set<string>();
+    for (const row of candidates) {
+      const thread = liveThreads.get(row.threadId);
+      if (thread === undefined) continue;
+      if (shouldAutoArchive(row.settledAt, delayMs, now, thread)) {
+        eligibleIds.add(row.threadId);
+      }
+    }
+
+    for (const threadId of safeArchiveRoots(
+      [...liveThreads.values()],
+      eligibleIds,
+    )) {
+      await bb.sdk.threads.archive({ threadId });
+    }
+  });
+
+  bb.events.on("thread.archived", ({ thread }) => {
+    clear(thread.id);
+  });
   bb.events.on("thread.deleted", ({ thread }) => {
     clear(thread.id);
   });
