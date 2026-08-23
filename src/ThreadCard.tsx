@@ -39,6 +39,8 @@ export function ThreadCard({
   childThreads = [],
   childrenCollapsed = false,
   onToggleChildren,
+  connectorHighlighted = false,
+  onConnectorHighlight,
 }: {
   thread: PluginSidebarThread;
   projectName: string | null;
@@ -57,6 +59,8 @@ export function ThreadCard({
   childThreads?: readonly PluginSidebarThread[];
   childrenCollapsed?: boolean;
   onToggleChildren?: () => void;
+  connectorHighlighted?: boolean;
+  onConnectorHighlight?: (highlighted: boolean) => void;
 }) {
   const actions = useSidebarThreadActions();
   const { splitProps, layout } = useSidebarThreadSplit(thread.id);
@@ -71,8 +75,11 @@ export function ThreadCard({
           "list-none",
           isNested && [
             "relative ml-4 pl-2",
-            "before:absolute before:-left-px before:top-0 before:border-l before:border-sidebar-border",
-            "after:absolute after:-left-px after:top-1/2 after:w-2 after:border-t after:border-sidebar-border",
+            "before:absolute before:left-0 before:top-0 before:border-l before:transition-colors",
+            "after:absolute after:left-0 after:top-1/2 after:w-2 after:border-t after:transition-colors",
+            connectorHighlighted
+              ? "before:border-foreground/35 after:border-foreground/35"
+              : "before:border-sidebar-border after:border-sidebar-border",
             isLastSibling ? "before:h-1/2" : "before:h-full",
           ],
         )}
@@ -82,7 +89,9 @@ export function ThreadCard({
             type="button"
             aria-label="Collapse children"
             onClick={onToggleChildren}
-            className="absolute -left-1 top-0 z-10 h-full w-3 cursor-pointer rounded hover:bg-sidebar-accent/60"
+            onMouseEnter={() => onConnectorHighlight?.(true)}
+            onMouseLeave={() => onConnectorHighlight?.(false)}
+            className="absolute -left-0.5 top-0 z-10 h-full w-2 cursor-pointer"
           />
         ) : null}
         <div

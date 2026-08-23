@@ -63,6 +63,9 @@ export function ThreadInbox({
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(
     () => new Set(),
   );
+  const [highlightedParent, setHighlightedParent] = useState<string | null>(
+    null,
+  );
 
   const toggleChildren = (parentId: string) => {
     setCollapsedParents((current) => {
@@ -190,6 +193,13 @@ export function ThreadInbox({
                           ? () => toggleChildren(parentId)
                           : undefined
                     }
+                    connectorHighlighted={parentId === highlightedParent}
+                    onConnectorHighlight={
+                      parentId
+                        ? (highlighted) =>
+                            setHighlightedParent(highlighted ? parentId : null)
+                        : undefined
+                    }
                   />
                   );
                 })}
@@ -224,6 +234,13 @@ export function ThreadInbox({
                         : parentId
                           ? () => toggleChildren(parentId)
                           : undefined
+                    }
+                    connectorHighlighted={parentId === highlightedParent}
+                    onConnectorHighlight={
+                      parentId
+                        ? (highlighted) =>
+                            setHighlightedParent(highlighted ? parentId : null)
+                        : undefined
                     }
                   />
                   );

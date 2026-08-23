@@ -249,6 +249,31 @@ describe("ThreadInbox", () => {
     expect(screen.getByText("Child")).toBeDefined();
   });
 
+  it("highlights the whole sibling rail from any connector segment", () => {
+    render([
+      thread({ id: "parent", title: "Parent" }),
+      thread({ id: "first", title: "First", parentThreadId: "parent" }),
+      thread({ id: "second", title: "Second", parentThreadId: "parent" }),
+    ]);
+
+    const connectors = screen.getAllByRole("button", {
+      name: "Collapse children",
+    });
+    fireEvent.mouseEnter(connectors[0]!);
+
+    const childRows = screen.getAllByRole("listitem").slice(1);
+    expect(childRows).toHaveLength(2);
+    for (const row of childRows) {
+      expect(row.className).toContain("before:border-foreground/35");
+      expect(row.className).toContain("after:border-foreground/35");
+    }
+
+    fireEvent.mouseLeave(connectors[0]!);
+    for (const row of childRows) {
+      expect(row.className).toContain("before:border-sidebar-border");
+    }
+  });
+
   it("finds a quiet child through sidebar search", () => {
     renderSlot(
       inbox,
