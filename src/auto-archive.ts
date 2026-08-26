@@ -43,7 +43,12 @@ export function shouldAutoArchive(
   thread: AutoArchiveSignals,
 ): boolean {
   if (settledAt + delayMs > now) return false;
-  if (thread.archivedAt !== null || thread.status !== "idle") return false;
+  if (
+    thread.archivedAt !== null ||
+    (thread.status !== "idle" && thread.status !== "error")
+  ) {
+    return false;
+  }
   if (thread.hasPendingInteraction) return false;
   if (thread.latestAttentionAt > settledAt) return false;
 

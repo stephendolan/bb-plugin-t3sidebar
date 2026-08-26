@@ -32,6 +32,12 @@ describe("shouldAutoArchive", () => {
     expect(shouldAutoArchive(100, 50, 150, quiet)).toBe(true);
   });
 
+  it("archives a quiet errored thread once its delay has elapsed", () => {
+    expect(
+      shouldAutoArchive(100, 50, 150, { ...quiet, status: "error" }),
+    ).toBe(true);
+  });
+
   it("keeps a thread that received attention after settling", () => {
     expect(
       shouldAutoArchive(100, 50, 150, { ...quiet, latestAttentionAt: 101 }),
@@ -40,6 +46,8 @@ describe("shouldAutoArchive", () => {
 
   it.each([
     { status: "active" as const },
+    { status: "starting" as const },
+    { status: "stopping" as const },
     { hasPendingInteraction: true },
     { activity: { ...quiet.activity, activeBackgroundAgentCount: 1 } },
     { archivedAt: 140 },
